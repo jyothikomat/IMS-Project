@@ -1,5 +1,6 @@
 package com.qa.ims.persistence.dao;
 
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,19 +12,20 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.qa.ims.persistence.domain.Customer;
+import com.qa.ims.persistence.domain.Order;
 import com.qa.ims.utils.DBUtils;
 
-public class CustomerDAO implements Dao<Customer> {
+public class OrderDAO implements Dao<Order> {
 
 	public static final Logger LOGGER = LogManager.getLogger();
 
 	@Override
-	public Customer modelFromResultSet(ResultSet resultSet) throws SQLException {
+	public Order modelFromResultSet(ResultSet resultSet) throws SQLException {
+		Long order_id = resultSet.getLong("order_id");
 		Long c_id = resultSet.getLong("c_id");
-		String firstname = resultSet.getString("firstname");
-		String surname = resultSet.getString("surname");
-		return new Customer(c_id, firstname, surname);
+		Double total_cost = resultSet.getDouble("total_cost");
+		
+		return new Order(order_id, c_id, total_cost);
 	}
 
 	/**
@@ -32,15 +34,15 @@ public class CustomerDAO implements Dao<Customer> {
 	 * @return A list of customers
 	 */
 	@Override
-	public List<Customer> readAll() {
+	public List<Order> readAll() {
 		try (Connection connection = DBUtils.getInstance().getConnection();
 				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery("SELECT * FROM customers");) {
-			List<Customer> customers = new ArrayList<>();
+				ResultSet resultSet = statement.executeQuery("SELECT * FROM orders");) {
+			List<Order> orders = new ArrayList<>();
 			while (resultSet.next()) {
-				customers.add(modelFromResultSet(resultSet));
+				orders.add(modelFromResultSet(resultSet));
 			}
-			return customers;
+			return orders;
 		} catch (SQLException e) {
 			LOGGER.debug(e);
 			LOGGER.error(e.getMessage());
@@ -48,10 +50,10 @@ public class CustomerDAO implements Dao<Customer> {
 		return new ArrayList<>();
 	}
 
-	public Customer readLatest() {
+	public Order readLatest() {
 		try (Connection connection = DBUtils.getInstance().getConnection();
 				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery("SELECT * FROM customers ORDER BY c_id DESC LIMIT 1");) {
+				ResultSet resultSet = statement.executeQuery("SELECT * FROM orders ORDER BY order_id DESC LIMIT 1");) {
 			resultSet.next();
 			return modelFromResultSet(resultSet);
 		} catch (Exception e) {
@@ -67,12 +69,12 @@ public class CustomerDAO implements Dao<Customer> {
 	 * @param customer - takes in a customer object. id will be ignored
 	 */
 	@Override
-	public Customer create(Customer customer) {
+	public Order create(Order order) {
 		try (Connection connection = DBUtils.getInstance().getConnection();
 				PreparedStatement statement = connection
-						.prepareStatement("INSERT INTO customers(firstname, surname) VALUES (?, ?)");) {
-			statement.setString(1, customer.getFirstname());
-			statement.setString(2, customer.getSurname());
+						.prepareStatement("INSERT INTO orders(c_id, total_cost) VALUES (?, ?)");) {
+			statement.setLong(1, order.getC_id());
+			statement.setDouble(2, order.getTotal_cost());
 			statement.executeUpdate();
 			return readLatest();
 		} catch (Exception e) {
@@ -83,10 +85,10 @@ public class CustomerDAO implements Dao<Customer> {
 	}
 
 	@Override
-	public Customer read(Long c_id) {
+	public Order read(Long order_id) {
 		try (Connection connection = DBUtils.getInstance().getConnection();
-				PreparedStatement statement = connection.prepareStatement("SELECT * FROM customers WHERE c_id = ?");) {
-			statement.setLong(1, c_id);
+				PreparedStatement statement = connection.prepareStatement("SELECT * FROM orders WHERE order_id = ?");) {
+			statement.setLong(1, order_id);
 			try (ResultSet resultSet = statement.executeQuery();) {
 				resultSet.next();
 				return modelFromResultSet(resultSet);
@@ -106,15 +108,15 @@ public class CustomerDAO implements Dao<Customer> {
 	 * @return
 	 */
 	@Override
-	public Customer update(Customer customer) {
+	public Order update(Order order) {
 		try (Connection connection = DBUtils.getInstance().getConnection();
 				PreparedStatement statement = connection
-						.prepareStatement("UPDATE customers SET firstname = ?, surname = ? WHERE c_id = ?");) {
-			statement.setString(1, customer.getFirstname());
-			statement.setString(2, customer.getSurname());
-			statement.setLong(3, customer.getC_id());
+						.prepareStatement("UPDATE orders SET total_cost = ? WHERE order_id = ?");) {
+			statement.setDouble(1, order.getTotal_cost());
+			
+			statement.setLong(2, order.getOrder_id());
 			statement.executeUpdate();
-			return read(customer.getC_id());
+			return read(order.getOrder_id());
 		} catch (Exception e) {
 			LOGGER.debug(e);
 			LOGGER.error(e.getMessage());
@@ -128,10 +130,10 @@ public class CustomerDAO implements Dao<Customer> {
 	 * @param id - id of the customer
 	 */
 	@Override
-	public int delete(long c_id) {
+	public int delete(long order_id) {
 		try (Connection connection = DBUtils.getInstance().getConnection();
-				PreparedStatement statement = connection.prepareStatement("DELETE FROM customers WHERE c_id = ?");) {
-			statement.setLong(1, c_id);
+				PreparedStatement statement = connection.prepareStatement("DELETE FROM orders WHERE order_id = ?");) {
+			statement.setLong(1, order_id);
 			return statement.executeUpdate();
 		} catch (Exception e) {
 			LOGGER.debug(e);
