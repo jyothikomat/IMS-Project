@@ -1,1 +1,1 @@
-INSERT INTO `customers` (`first_name`, `surname`) VALUES ('jordan', 'harrison');
+INSERT INTO `imstest`.`customers` (`firstname`, `surname`) VALUES ('jordan', 'harrison');
